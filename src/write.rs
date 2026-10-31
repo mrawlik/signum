@@ -355,7 +355,7 @@ mod tests {
             inherit_resources: false,
             dirty_ctm: false,
         });
-        let date = crate::stamp::date_svg("Zurich, 2026-10-31").unwrap();
+        let date = crate::stamp::text_svg("Zurich, 2026-10-31").unwrap();
         let m = [100.0, 0.0, 0.0, 12.0, 50.0, 300.0];
         let placements: Vec<_> =
             (0..3).map(|_| Placement { page: 0, svg: &date, matrix: m }).collect();

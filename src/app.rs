@@ -26,6 +26,8 @@ pub struct SignumApp {
     doc: Option<OpenDoc>,
     signature: Option<Rc<Svg>>,
     place: String,
+    /// Free text to stamp.
+    text: String,
     /// The last generated date stamp, reused while its text is unchanged.
     date: Option<(String, Rc<Svg>)>,
     mode: Mode,
@@ -90,6 +92,7 @@ impl SignumApp {
             doc: None,
             signature,
             place,
+            text: String::new(),
             date: None,
             mode: Mode::Idle,
             hovered: None,
@@ -164,7 +167,7 @@ impl SignumApp {
         {
             return Some(svg.clone());
         }
-        match stamp::date_svg(&text) {
+        match stamp::text_svg(&text) {
             Ok(svg) => {
                 self.date = Some((text, svg.clone()));
                 Some(svg)
@@ -278,38 +281,78 @@ impl SignumApp {
     fn toolbar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             let idle = self.picker.is_none();
-            if ui.add_enabled(idle, egui::Button::new("Open…")).clicked() {
+            if ui
+                .add_enabled(idle, egui::Button::new("🗁"))
+                .on_hover_text("Open a PDF")
+                .clicked()
+            {
                 self.pick(ui.ctx(), false);
             }
             let has_doc = self.doc.is_some();
-            let sig = ui
-                .add_enabled(
-                    has_doc && self.signature.is_some(),
-                    egui::Button::new("Signature"),
-                )
-                .on_disabled_hover_text("Set your signature first");
+            // "Sign" and its ⚙ are drawn as one split button: no gap, inner corners square.
+            let (sig, set_sig) = ui
+                .scope(|ui| {
+                    ui.spacing_mut().item_spacing.x = 0.0;
+                    let r = ui.visuals().widgets.inactive.corner_radius;
+                    let sig = ui
+                        .add_enabled(
+                            has_doc && self.signature.is_some(),
+                            egui::Button::new("Sign")
+                                .corner_radius(egui::CornerRadius { ne: 0, se: 0, ..r }),
+                        )
+                        .on_disabled_hover_text("Set your signature first");
+                    let set_sig = ui
+                        .add_enabled(
+                            idle,
+                            egui::Button::new("⚙")
+                                .corner_radius(egui::CornerRadius { nw: 0, sw: 0, ..r }),
+                        )
+                        .on_hover_text("Set signature: choose an .svg file (or drop it on the window)");
+                    (sig, set_sig)
+                })
+                .inner;
             if sig.clicked()
                 && let Some(svg) = &self.signature
             {
                 self.mode = Mode::Placing { svg: svg.clone(), width: stamp::SIGNATURE_WIDTH };
             }
-            let set_sig = ui
-                .add_enabled(idle, egui::Button::new("Set signature…"))
-                .on_hover_text("Choose an .svg file (or drop it on the window)");
             if set_sig.clicked() {
                 self.pick(ui.ctx(), true);
             }
-            if ui.add_enabled(has_doc, egui::Button::new("Date")).clicked()
+            let date = input_with_button(ui, &mut self.place, "Place", 70.0, has_doc, "Date");
+            if date.clicked()
                 && let Some(svg) = self.date_svg()
             {
                 let width = svg.natural_width();
                 self.mode = Mode::Placing { svg, width };
             }
-            ui.add(
-                egui::TextEdit::singleline(&mut self.place)
-                    .hint_text("Place")
-                    .desired_width(140.0),
-            );
+            for (label, src, hover) in [
+                ("X", stamp::CROSS_SVG, "Place a cross"),
+                ("✔", stamp::CHECK_SVG, "Place a checkmark"),
+            ] {
+                if ui
+                    .add_enabled(has_doc, egui::Button::new(label))
+                    .on_hover_text(hover)
+                    .clicked()
+                    && let Ok(svg) = Svg::parse(src.to_owned())
+                {
+                    let width = svg.natural_width();
+                    self.mode = Mode::Placing { svg, width };
+                }
+            }
+            let has_text = !self.text.trim().is_empty();
+            let place_text =
+                input_with_button(ui, &mut self.text, "Text", 140.0, has_doc && has_text, "🗛")
+                    .on_hover_text("Place this text");
+            if place_text.clicked() {
+                match stamp::text_svg(self.text.trim()) {
+                    Ok(svg) => {
+                        let width = svg.natural_width();
+                        self.mode = Mode::Placing { svg, width };
+                    }
+                    Err(e) => self.error = Some(format!("Cannot make text stamp: {e}")),
+                }
+            }
             let can_save = self.doc.as_ref().is_some_and(|d| d.read_only.is_none());
             if ui.add_enabled(can_save, egui::Button::new("Save copy")).clicked() {
                 self.save(ui.ctx(), SaveTarget::Copy);
@@ -543,6 +586,33 @@ impl SignumApp {
 }
 
 /// Wheel notches (up = positive) plus Up/Down key presses, consumed from this frame's input.
+/// A text field and a button drawn as one control: no gap, the facing corners square.
+/// Returns the button's response.
+fn input_with_button(
+    ui: &mut egui::Ui,
+    text: &mut String,
+    hint: &str,
+    width: f32,
+    enabled: bool,
+    label: &str,
+) -> egui::Response {
+    ui.scope(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        let r = ui.visuals().widgets.inactive.corner_radius;
+        let w = &mut ui.visuals_mut().widgets;
+        for v in [&mut w.inactive, &mut w.hovered, &mut w.active] {
+            v.corner_radius.ne = 0;
+            v.corner_radius.se = 0;
+        }
+        ui.add(egui::TextEdit::singleline(text).hint_text(hint).desired_width(width));
+        ui.add_enabled(
+            enabled,
+            egui::Button::new(label).corner_radius(egui::CornerRadius { nw: 0, sw: 0, ..r }),
+        )
+    })
+    .inner
+}
+
 fn take_resize_notches(ctx: &egui::Context) -> f64 {
     let (scroll, up, down) = ctx.input_mut(|inp| {
         (
@@ -610,9 +680,9 @@ impl eframe::App for SignumApp {
                     let sig = if self.signature.is_some() {
                         ""
                     } else {
-                        "\nUse “Set signature…” to choose your signature .svg."
+                        "\nUse ⚙ next to “Sign” to choose your signature .svg."
                     };
-                    ui.label(format!("Use “Open…”, drop a PDF here, or run `signum file.pdf`.{sig}"));
+                    ui.label(format!("Use 🗁, drop a PDF here, or run `signum file.pdf`.{sig}"));
                 });
                 return;
             }

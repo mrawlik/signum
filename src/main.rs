@@ -17,6 +17,14 @@ fn main() -> eframe::Result {
             .with_title("signum")
             .with_inner_size([900.0, 1000.0])
             .with_drag_and_drop(true),
+        event_loop_builder: Some(Box::new(|_builder| {
+            // winit cannot receive file drops on native Wayland; XWayland can.
+            #[cfg(target_os = "linux")]
+            if std::env::var_os("DISPLAY").is_some() {
+                use winit::platform::x11::EventLoopBuilderExtX11;
+                _builder.with_x11();
+            }
+        })),
         ..Default::default()
     };
     eframe::run_native(

@@ -13,6 +13,7 @@ pdf-writer = "0.12"
 resvg = { version = "0.45", default-features = false, features = ["text"] }
 rfd = "0.17"
 svg2pdf = { version = "0.13.0", default-features = false, features = ["text"] }
+winit = { version = "0.30", default-features = false }
 
 # hayro is ~100x slower unoptimised; keep dependencies fast in debug builds.
 [profile.dev.package."*"]

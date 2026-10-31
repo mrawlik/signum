@@ -16,6 +16,11 @@ const DATE_FONT_SIZE: f64 = 11.0;
 /// Default width of a freshly placed signature, in points.
 pub const SIGNATURE_WIDTH: f64 = 150.0;
 
+/// A 12 pt cross for ticking boxes.
+pub const CROSS_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" width="12" height="12"><path d="M2 2 10 10M10 2 2 10" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round"/></svg>"#;
+/// A 12 pt checkmark for ticking boxes.
+pub const CHECK_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" width="12" height="12"><path d="M1.5 6.5 4.5 9.5 10.5 2.5" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>"#;
+
 static FONT_DB: LazyLock<Arc<fontdb::Database>> = LazyLock::new(|| {
     let mut db = fontdb::Database::new();
     db.load_font_data(FONT.to_vec());
@@ -106,7 +111,7 @@ pub fn today() -> jiff::civil::Date {
 }
 
 /// An SVG showing `text`, with its viewBox fitted tightly around the glyphs.
-pub fn date_svg(text: &str) -> Result<Rc<Svg>, String> {
+pub fn text_svg(text: &str) -> Result<Rc<Svg>, String> {
     let text = escape_xml(text);
     let make = |view_box: &str, w: f64, h: f64| {
         format!(
@@ -161,12 +166,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn date_svg_is_tight() {
-        let svg = date_svg("Zürich & <Co>, 2026-10-31").unwrap();
+    fn text_svg_is_tight() {
+        let svg = text_svg("Zürich & <Co>, 2026-10-31").unwrap();
         // 11 pt text: a couple of pt taller than the font size, well over 100 pt wide.
         let size = svg.tree.size();
         assert!((10.0..20.0).contains(&size.height()), "{size:?}");
         assert!((100.0..300.0).contains(&size.width()), "{size:?}");
+    }
+
+    #[test]
+    fn marks_parse() {
+        for src in [CROSS_SVG, CHECK_SVG] {
+            assert_eq!(Svg::parse(src.to_owned()).unwrap().natural_width(), 12.0);
+        }
     }
 
     #[test]

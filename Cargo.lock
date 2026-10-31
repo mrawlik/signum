@@ -3647,6 +3647,7 @@ dependencies = [
  "resvg",
  "rfd",
  "svg2pdf",
+ "winit",
 ]
 
 [[package]]
