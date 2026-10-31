@@ -40,6 +40,48 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "signum",
         options,
-        Box::new(|cc| Ok(Box::new(app::SignumApp::new(cc, path)))),
+        Box::new(|cc| {
+            #[cfg(target_os = "linux")]
+            name_x11_window(cc);
+            Ok(Box::new(app::SignumApp::new(cc, path)))
+        }),
     )
+}
+
+/// Tells the window manager which desktop file this window belongs to.
+///
+/// egui-winit sets WM_CLASS to ("", app id). KWin finds a window's desktop file through
+/// _KDE_NET_WM_DESKTOP_FILE, or else by matching the WM_CLASS instance against StartupWMClass.
+/// With neither, KWin cannot tell that the window is the app it is launching, and its launch
+/// feedback keeps bouncing until it times out. eframe keeps the window unmapped until the
+/// first frame, so these properties are in place before the window manager first reads them.
+#[cfg(target_os = "linux")]
+fn name_x11_window(cc: &eframe::CreationContext<'_>) {
+    use raw_window_handle::{HasWindowHandle as _, RawWindowHandle};
+    use x11rb::protocol::xproto::{AtomEnum, ConnectionExt as _, PropMode};
+    use x11rb::wrapper::ConnectionExt as _;
+
+    let Ok(handle) = cc.window_handle() else { return };
+    let window = match handle.as_raw() {
+        RawWindowHandle::Xlib(h) => h.window as u32,
+        RawWindowHandle::Xcb(h) => h.window.get(),
+        _ => return,
+    };
+    // Best effort: without these the app still works, only the launch feedback lingers.
+    let _ = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let (conn, _) = x11rb::connect(None)?;
+        let desktop_file = conn.intern_atom(false, b"_KDE_NET_WM_DESKTOP_FILE")?.reply()?.atom;
+        let utf8 = conn.intern_atom(false, b"UTF8_STRING")?.reply()?.atom;
+        conn.change_property8(PropMode::REPLACE, window, desktop_file, utf8, APP_ID.as_bytes())?;
+        let class = format!("{APP_ID}\0{APP_ID}\0");
+        conn.change_property8(
+            PropMode::REPLACE,
+            window,
+            AtomEnum::WM_CLASS,
+            AtomEnum::STRING,
+            class.as_bytes(),
+        )?;
+        conn.sync()?;
+        Ok(())
+    })();
 }

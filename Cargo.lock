@@ -3346,11 +3346,13 @@ dependencies = [
  "kurbo 0.13.1",
  "lopdf",
  "pdf-writer",
+ "raw-window-handle",
  "resvg",
  "rfd",
  "svg2pdf",
  "winit",
  "winresource",
+ "x11rb",
 ]
 
 [[package]]
