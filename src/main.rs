@@ -34,6 +34,7 @@ fn main() -> eframe::Result {
                 _builder.with_x11();
             }
         })),
+        renderer: eframe::Renderer::Glow,
         ..Default::default()
     };
     eframe::run_native(

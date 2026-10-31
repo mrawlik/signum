@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Starts in well under a second instead of several: signum now draws with OpenGL
+  instead of wgpu, which no longer wakes the discrete GPU on hybrid-graphics laptops.
+
 ## 0.1.0 — 2026-10-31
 
 ### Added
