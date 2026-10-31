@@ -50,3 +50,11 @@ File dialogs need `xdg-desktop-portal`, which most desktops already have.
 ```sh
 cargo run --release -- path/to/file.pdf
 ```
+
+## License
+
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT), at your option.
+
+The bundled DejaVu Sans font is under its own license; see
+[assets/DejaVuSans-LICENSE.txt](assets/DejaVuSans-LICENSE.txt).
