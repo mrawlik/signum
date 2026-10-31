@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- App icon: shown in the window, taskbar and dock, and embedded in the Windows .exe.
+  A Linux .desktop file registers signum for opening PDFs.
 - X and ✔ buttons place a cross or a checkmark, e.g. for ticking boxes.
 - Free-text stamp: type into the Text field and click 🗛 to place it.
 
