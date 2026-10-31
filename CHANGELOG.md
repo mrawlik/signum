@@ -1,10 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2026-10-31
 
 ### Changed
 - Starts in well under a second instead of several: signum now draws with OpenGL
   instead of wgpu, which no longer wakes the discrete GPU on hybrid-graphics laptops.
+
+### Fixed
+- KDE's launch animation stops as soon as the window appears, instead of bouncing
+  for a few more seconds: the window now names its desktop file.
 
 ## 0.1.0 — 2026-10-31
 
