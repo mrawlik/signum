@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 — 2026-10-31
 
 ### Added
+- Debian package via `cargo deb`, with install instructions in the README.
 - App icon: shown in the window, taskbar and dock, and embedded in the Windows .exe.
   A Linux .desktop file registers signum for opening PDFs.
 - X and ✔ buttons place a cross or a checkmark, e.g. for ticking boxes.
