@@ -2,6 +2,8 @@
 name = "signum"
 version = "0.1.0"
 edition = "2024"
+description = "Stamp an SVG signature and a date onto PDFs"
+repository = "https://github.com/mrawlik/signum"
 
 [dependencies]
 eframe = { version = "0.37.0", features = ["persistence"] }
@@ -21,3 +23,21 @@ opt-level = 3
 
 [target.'cfg(windows)'.build-dependencies]
 winresource = "0.1"
+
+[package.metadata.deb]
+maintainer = "Michał Rawlik <michal.rawlik@magnebotix.com>"
+section = "graphics"
+depends = "$auto"
+# rfd opens file dialogs through the desktop portal.
+recommends = "xdg-desktop-portal"
+assets = [
+    ["target/release/signum", "usr/bin/", "755"],
+    ["packaging/linux/io.github.mrawlik.signum.desktop", "usr/share/applications/", "644"],
+    ["packaging/linux/io.github.mrawlik.signum.svg", "usr/share/icons/hicolor/scalable/apps/", "644"],
+    ["packaging/linux/icons/16.png", "usr/share/icons/hicolor/16x16/apps/io.github.mrawlik.signum.png", "644"],
+    ["packaging/linux/icons/32.png", "usr/share/icons/hicolor/32x32/apps/io.github.mrawlik.signum.png", "644"],
+    ["packaging/linux/icons/48.png", "usr/share/icons/hicolor/48x48/apps/io.github.mrawlik.signum.png", "644"],
+    ["packaging/linux/icons/128.png", "usr/share/icons/hicolor/128x128/apps/io.github.mrawlik.signum.png", "644"],
+    ["packaging/linux/icons/256.png", "usr/share/icons/hicolor/256x256/apps/io.github.mrawlik.signum.png", "644"],
+    ["assets/DejaVuSans-LICENSE.txt", "usr/share/doc/signum/DejaVuSans-LICENSE.txt", "644"],
+]
