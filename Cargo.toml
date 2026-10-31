@@ -1,0 +1,19 @@
+[package]
+name = "signum"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = { version = "0.37.0", features = ["persistence"] }
+hayro = "0.8.0"
+jiff = "0.2.38"
+kurbo = "0.13"
+lopdf = { version = "0.46.0", default-features = false }
+pdf-writer = "0.12"
+resvg = { version = "0.45", default-features = false, features = ["text"] }
+rfd = "0.17"
+svg2pdf = { version = "0.13.0", default-features = false, features = ["text"] }
+
+# hayro is ~100x slower unoptimised; keep dependencies fast in debug builds.
+[profile.dev.package."*"]
+opt-level = 3
