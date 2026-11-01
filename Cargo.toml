@@ -1,6 +1,6 @@
 [package]
 name = "signum"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 description = "Stamp an SVG signature and a date onto PDFs"
 repository = "https://github.com/mrawlik/signum"

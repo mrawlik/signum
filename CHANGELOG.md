@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 — 2026-11-01
+
+### Added
+- Prebuilt Debian package for Debian 12, Ubuntu 24.04 and newer (amd64). It is
+  attached to each GitHub release and can be installed and updated with apt from
+  https://apt.mrawlik.com.
+
 ## 0.1.1 — 2026-10-31
 
 ### Changed
