@@ -41,7 +41,7 @@ x11rb = "0.13"
 winresource = "0.1"
 
 [package.metadata.deb]
-maintainer = "Michał Rawlik <michal.rawlik@proton.me>"
+maintainer = "Michał Rawlik <dev@mrawlik.com>"
 section = "graphics"
 depends = "$auto"
 # rfd opens file dialogs through the desktop portal.

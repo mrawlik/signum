@@ -1,0 +1,60 @@
+name: Release
+
+# Builds the .deb and attaches it to a GitHub release. mrawlik/apt then indexes,
+# signs and serves it at https://apt.mrawlik.com.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the GitHub release
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    # Build on the oldest distro we support (Debian 12; Ubuntu 24.04 is newer): the
+    # binary needs at least this glibc, and cargo-deb derives Depends from the
+    # libraries it finds here.
+    container: debian:bookworm
+    steps:
+      - run: apt-get update && apt-get install -y --no-install-recommends build-essential ca-certificates curl
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb
+      - name: Check the tag matches the crate version
+        shell: bash
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          [ "$GITHUB_REF_NAME" = "v$version" ] || { echo "::error::tag $GITHUB_REF_NAME, but Cargo.toml has $version"; exit 1; }
+      - run: cargo deb
+      - uses: actions/upload-artifact@v7
+        with:
+          name: deb
+          path: target/debian/*.deb
+
+  release:
+    needs: deb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: deb
+          path: dist
+
+      # Published and marked latest (no --draft/--prerelease): mrawlik/apt only
+      # picks up the latest release.
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Release notes: this version's section of CHANGELOG.md.
+          awk -v h="## ${GITHUB_REF_NAME#v} " 'index($0, h) == 1 { f = 1; next } /^## / { f = 0 } f' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/*.deb --title "$GITHUB_REF_NAME" --notes-file notes.md
+
+      - name: Tell mrawlik/apt to republish
+        run: gh workflow run publish.yml --repo mrawlik/apt
+        env:
+          GH_TOKEN: ${{ secrets.APT_REPO_DISPATCH }}
